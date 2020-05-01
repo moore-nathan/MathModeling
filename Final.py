@@ -3,6 +3,7 @@ import numpy as np
 import random as rnd
 from Person import Person
 
+
 def chance(thresh):
     r = rnd.randint(0, 1000)
     if r < thresh * 1000:
@@ -11,14 +12,20 @@ def chance(thresh):
         return 0
 
 
-def dailyInfect(I, pop):
+def dailyInfect(I, pop, IR, interactions):
     for i in [p for p in pop if p.type == 'S']:
+        # I = [p for p in pop if p.type == 'I']
         numInfectEncount = 0
         for j in range(interactions):
             if chance(I / totalpop):
                 numInfectEncount += 1
         if chance(numInfectEncount * IR):
             i.type = 'I'
+            # I[rnd.randint(0, len(I)-1)].numInfected += 1
+            num = rnd.choice([p for p in pop if p.type == 'I']).id
+            # pop[rnd.choice([p for p in pop if p.type == 'I']).id].numInfected += 1
+            pop[num].numInfected += 1
+            # print(pop[num].numInfected)
     return pop
 
 
@@ -29,7 +36,7 @@ def addDay(pop):
     return pop
 
 
-def removed(pos, pop, D):
+def removed(pos, pop, D, dailyDeathRate, rLen):
     I = [p for p in pop if p.type == 'I']
     for i in I:
         if i.daysSick >= rLen:
@@ -39,10 +46,26 @@ def removed(pos, pop, D):
     return pop, D
 
 
+def daily_reproduction_number(infected):
+    r = []
+    for i in infected:
+        try:
+            rate = i.numInfected / i.daysSick
+        except ZeroDivisionError:
+            rate = 0
+        est = i.numInfected + rate * (rLen - i.daysSick)
+        r.append(est)
+    if r:
+        return r
+    else:
+        return [0]
+
+
 t = np.arange(365)
 S = np.zeros(t.size)
 I = np.zeros(t.size)
 R = np.zeros(t.size)
+reproduction_number = np.zeros(t.size)
 # D = np.zeros(t.size)
 
 factor = 10 ** 6
@@ -69,8 +92,10 @@ rLen = 21
 #  of percentage getting infection when in contact with someone who has it.
 #  Although, in terms of comparsion between scenerios this will not play a
 #  role in that effect.
-# IR = 1048834 / (328.2 * 10**6)  # roughly .3 chance to get virus
-IR = .01
+# IR = 1048834 / (328.2 * 10**6)  # roughly .3 chance to get virus. This gave inaccurate results.
+# 0.02 was chosen because it resulted in the reproductive number very closely resembling that of Covid-19 which is
+# around 2.0
+IR = .015
 
 #  https://www.researchgate.net/figure/Daily-average-number-of-contacts-per-person-in-age-group-j-The-average-number-of_fig2_228649013
 #  Interactions per day (estimated)
@@ -84,23 +109,44 @@ R[0] = 0
 D = 0
 
 totalpop = S[0] + I[0] + R[0] - D
-pop = [Person('S', 0) for i in range(int(totalpop))]
+pop = [Person(i, 'S') for i in range(int(totalpop))]
 pop[len(pop) - 1].type = 'I'
+
+
 # print(sum([p.type == 'I' for p in pop]))
 
-#
-for i in t:
-    S[i] = sum([p.type == 'S' for p in pop])
-    I[i] = sum([p.type == 'I' for p in pop])
-    R[i] = sum([p.type == 'R' for p in pop])
-    pop = addDay(pop)
-    pop = dailyInfect(I[i], pop)
-    pop, D = removed(i, pop, D)
 
-print(S)
-print(I)
-print(R)
-print(D)
+def SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR, interactions, pop):
+    for i in t:
+        S[i] = sum([p.type == 'S' for p in pop])
+        I[i] = sum([p.type == 'I' for p in pop])
+        R[i] = sum([p.type == 'R' for p in pop])
+        pop = addDay(pop)
+        pop = dailyInfect(I[i], pop, IR, interactions)
+        pop, D = removed(i, pop, D, dailyDeathRate, rLen)
+        l = daily_reproduction_number([p for p in pop if p.type == "I"])
+        reproduction_number[i] = np.average(l)
+    return S, I, R, D, reproduction_number, pop
+
+
+S, I, R, D, reproduction_number, pop = SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR,
+                                                 interactions, pop)
+
+# for i in t:
+#     S[i] = sum([p.type == 'S' for p in pop])
+#     I[i] = sum([p.type == 'I' for p in pop])
+#     R[i] = sum([p.type == 'R' for p in pop])
+#     pop = addDay(pop)
+#     pop = dailyInfect(I[i], pop)
+#     pop, D = removed(i, pop, D)
+#     l = daily_reproduction_number([p for p in pop if p.type == "I"])
+#     reproduction_number[i] = np.average(l)
+
+
+print(np.average([i for i in reproduction_number if i > 0]))
+
+# infected = sum([p.numInfected for p in pop if p.type == 'R'])
+# print(infected)
 
 plt.plot(t, S, 'b', label='S')
 plt.plot(t, I, 'r', label='I')
@@ -110,6 +156,7 @@ plt.legend()
 plt.title('SIR Model')
 plt.xlabel("Time (days)")
 plt.ylabel("# of Persons")
+plt.text(250, 250, "r = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
 plt.show()
 
 # plt.style.use('classic')
