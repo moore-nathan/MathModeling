@@ -4,9 +4,6 @@ import random as rnd
 from Person import Person
 import Methods as M
 
-
-
-
 t = np.arange(365)
 S = np.zeros(t.size)
 I = np.zeros(t.size)
@@ -60,9 +57,6 @@ pop = [Person(i, 'S') for i in range(int(totalpop))]
 pop[len(pop) - 1].type = 'I'
 
 
-# print(sum([p.type == 'I' for p in pop]))
-
-
 def SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR, interactions, pop):
     pop = [Person(i, 'S') for i in range(int(totalpop))]
     pop[len(pop) - 1].type = 'I'
@@ -83,7 +77,8 @@ def infection_rate_subplots(S, I, R, D, reproduction_number, pop):
     # running model with different infection rates
     n = 1
     for i in np.arange(0.01, 0.02, 0.001):
-        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), dailyDeathRate, rLen,
+        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(),
+                                                               reproduction_number.copy(), dailyDeathRate, rLen,
                                                                i, interactions, pop.copy())
         plt.subplot(2, 5, n)
         plt.plot(t, S1, 'b', label='S')
@@ -94,18 +89,19 @@ def infection_rate_subplots(S, I, R, D, reproduction_number, pop):
         plt.legend()
         plt.title("SIRD Model, IR=%.3f" % i)
         plt.xlabel("Time (days)")
-        plt.ylabel(r"# of Persons $/10^6$")
+        plt.ylabel(r"Population ($10^6$ Persons)")
         plt.text(250, 250, "R = %.3f" % (np.average([k for k in reproduction_number1 if k > 0])), fontsize=10)
         plt.text(250, 230, "deaths = %.0f" % (D1[len(D) - 1]))
         n += 1
     plt.show()
 
 
-def interactions_subplots(S,I,R,D, reproduction_number, pop):
+def interactions_subplots(S, I, R, D, reproduction_number, pop):
     # running model with different number of interactions
     n = 1
-    for i in np.arange(5,15):
-        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), dailyDeathRate, rLen,
+    for i in np.arange(5, 15):
+        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(),
+                                                               reproduction_number.copy(), dailyDeathRate, rLen,
                                                                IR, i, pop.copy())
         plt.subplot(2, 5, n)
         plt.plot(t, S1, 'b', label='S')
@@ -116,7 +112,7 @@ def interactions_subplots(S,I,R,D, reproduction_number, pop):
         plt.legend()
         plt.title("SIRD Model, interactions=%.0f" % i)
         plt.xlabel("Time (days)")
-        plt.ylabel(r"# of Persons $/10^6$")
+        plt.ylabel(r"Population ($10^6$ Persons)")
         plt.text(250, 250, "R = %.3f" % (np.average([k for k in reproduction_number1 if k > 0])), fontsize=10)
         plt.text(250, 230, "deaths = %.0f" % (D1[len(D) - 1]))
         n += 1
@@ -128,11 +124,6 @@ interactions_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_numbe
 S, I, R, D, reproduction_number, pop = SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR,
                                                  interactions, pop)
 
-print(np.average([i for i in reproduction_number if i > 0]))
-
-# infected = sum([p.numInfected for p in pop if p.type == 'R'])
-# print(infected)
-
 plt.plot(t, S, 'b', label='S')
 plt.plot(t, I, 'r', label='I')
 plt.plot(t, R, 'g', label='R')
@@ -141,16 +132,7 @@ plt.plot(t, D, 'black', label='D')
 plt.legend()
 plt.title('SIR Model (default)')
 plt.xlabel("Time (days)")
-plt.ylabel(r"# of Persons $/10^6$")
+plt.ylabel(r"Population ($10^6$ Persons)")
 plt.text(250, 250, "R = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
 plt.text(250, 230, "deaths = %.0f" % (D[len(D) - 1]))
 plt.show()
-
-# plt.style.use('classic')
-# fig, ax = plt.subplots()
-# ax.plot(t, S, label='S')
-# ax.plot(t, I, label='I')
-# ax.plot(t, R, label='R')
-# ax.axis('time(days)')
-# leg = ax.legend()
-# plt.show()
