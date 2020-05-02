@@ -2,69 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random as rnd
 from Person import Person
+import Methods as M
 
 
-def chance(thresh):
-    r = rnd.randint(0, 1000)
-    if r < thresh * 1000:
-        return 1
-    else:
-        return 0
-
-
-def dailyInfect(I, pop, IR, interactions):
-    for i in [p for p in pop if p.type == 'S']:
-        # I = [p for p in pop if p.type == 'I']
-        numInfectEncount = 0
-        for j in range(interactions):
-            if chance(I / totalpop):
-                numInfectEncount += 1
-        if chance(numInfectEncount * IR):
-            i.type = 'I'
-            # I[rnd.randint(0, len(I)-1)].numInfected += 1
-            num = rnd.choice([p for p in pop if p.type == 'I']).id
-            # pop[rnd.choice([p for p in pop if p.type == 'I']).id].numInfected += 1
-            pop[num].numInfected += 1
-            # print(pop[num].numInfected)
-    return pop
-
-
-def addDay(pop):
-    I = [p for p in pop if p.type == 'I']
-    for i in I:
-        i.daysSick += 1
-    return pop
-
-
-def removed(pos, pop, D, dailyDeathRate, rLen):
-    I = [p for p in pop if p.type == 'I']
-    for i in I:
-        if i.daysSick >= rLen:
-            i.type = 'R'
-            if chance(dailyDeathRate): D += 1
-            # to be added is instead added to death
-    return pop, D
-
-
-def daily_reproduction_number(infected):
-    r = []
-    for i in infected:
-        try:
-            rate = i.numInfected / i.daysSick
-        except ZeroDivisionError:
-            rate = 0
-        est = i.numInfected + rate * (rLen - i.daysSick)
-        r.append(est)
-    if r:
-        return r
-    else:
-        return [0]
 
 
 t = np.arange(365)
 S = np.zeros(t.size)
 I = np.zeros(t.size)
 R = np.zeros(t.size)
+D = np.zeros(t.size)
 reproduction_number = np.zeros(t.size)
 # D = np.zeros(t.size)
 
@@ -106,9 +53,9 @@ interactions = int(interactions / 2)
 S[0] = 327
 I[0] = 1
 R[0] = 0
-D = 0
+D[0] = 0
 
-totalpop = S[0] + I[0] + R[0] - D
+totalpop = S[0] + I[0] + R[0] - D[0]
 pop = [Person(i, 'S') for i in range(int(totalpop))]
 pop[len(pop) - 1].type = 'I'
 
@@ -117,31 +64,69 @@ pop[len(pop) - 1].type = 'I'
 
 
 def SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR, interactions, pop):
+    pop = [Person(i, 'S') for i in range(int(totalpop))]
+    pop[len(pop) - 1].type = 'I'
     for i in t:
         S[i] = sum([p.type == 'S' for p in pop])
         I[i] = sum([p.type == 'I' for p in pop])
         R[i] = sum([p.type == 'R' for p in pop])
-        pop = addDay(pop)
-        pop = dailyInfect(I[i], pop, IR, interactions)
-        pop, D = removed(i, pop, D, dailyDeathRate, rLen)
-        l = daily_reproduction_number([p for p in pop if p.type == "I"])
+        D[i] = sum([p.type == 'D' for p in pop])
+        pop = M.addDay(pop.copy())
+        pop = M.dailyInfect(I[i], pop.copy(), IR, interactions, totalpop)
+        pop = M.removed(pop.copy(), dailyDeathRate, rLen)
+        l = M.daily_reproduction_number([p for p in pop if p.type == "I"], rLen)
         reproduction_number[i] = np.average(l)
     return S, I, R, D, reproduction_number, pop
 
 
+def infection_rate_subplots(S, I, R, D, reproduction_number, pop):
+    # running model with different infection rates
+    n = 1
+    for i in np.arange(0.01, 0.02, 0.001):
+        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), dailyDeathRate, rLen,
+                                                               i, interactions, pop.copy())
+        plt.subplot(2, 5, n)
+        plt.plot(t, S1, 'b', label='S')
+        plt.plot(t, I1, 'r', label='I')
+        plt.plot(t, R1, 'g', label='R')
+        plt.plot(t, D1, 'black', label='D')
+        # plt.fill_between(t, I, color='r')
+        plt.legend()
+        plt.title("SIRD Model, IR=%.3f" % i)
+        plt.xlabel("Time (days)")
+        plt.ylabel(r"# of Persons $/10^6$")
+        plt.text(250, 250, "R = %.3f" % (np.average([k for k in reproduction_number1 if k > 0])), fontsize=10)
+        plt.text(250, 230, "deaths = %.0f" % (D1[len(D) - 1]))
+        n += 1
+    plt.show()
+
+
+def interactions_subplots(S,I,R,D, reproduction_number, pop):
+    # running model with different number of interactions
+    n = 1
+    for i in np.arange(5,15):
+        S1, I1, R1, D1, reproduction_number1, pop1 = SIR_Model(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), dailyDeathRate, rLen,
+                                                               IR, i, pop.copy())
+        plt.subplot(2, 5, n)
+        plt.plot(t, S1, 'b', label='S')
+        plt.plot(t, I1, 'r', label='I')
+        plt.plot(t, R1, 'g', label='R')
+        plt.plot(t, D1, 'black', label='D')
+        # plt.fill_between(t, I, color='r')
+        plt.legend()
+        plt.title("SIRD Model, interactions=%.0f" % i)
+        plt.xlabel("Time (days)")
+        plt.ylabel(r"# of Persons $/10^6$")
+        plt.text(250, 250, "R = %.3f" % (np.average([k for k in reproduction_number1 if k > 0])), fontsize=10)
+        plt.text(250, 230, "deaths = %.0f" % (D1[len(D) - 1]))
+        n += 1
+    plt.show()
+
+
+infection_rate_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
+interactions_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
 S, I, R, D, reproduction_number, pop = SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR,
                                                  interactions, pop)
-
-# for i in t:
-#     S[i] = sum([p.type == 'S' for p in pop])
-#     I[i] = sum([p.type == 'I' for p in pop])
-#     R[i] = sum([p.type == 'R' for p in pop])
-#     pop = addDay(pop)
-#     pop = dailyInfect(I[i], pop)
-#     pop, D = removed(i, pop, D)
-#     l = daily_reproduction_number([p for p in pop if p.type == "I"])
-#     reproduction_number[i] = np.average(l)
-
 
 print(np.average([i for i in reproduction_number if i > 0]))
 
@@ -151,12 +136,14 @@ print(np.average([i for i in reproduction_number if i > 0]))
 plt.plot(t, S, 'b', label='S')
 plt.plot(t, I, 'r', label='I')
 plt.plot(t, R, 'g', label='R')
-plt.fill_between(t, I, color='r')
+plt.plot(t, D, 'black', label='D')
+# plt.fill_between(t, I, color='r')
 plt.legend()
-plt.title('SIR Model')
+plt.title('SIR Model (default)')
 plt.xlabel("Time (days)")
-plt.ylabel("# of Persons")
-plt.text(250, 250, "r = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
+plt.ylabel(r"# of Persons $/10^6$")
+plt.text(250, 250, "R = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
+plt.text(250, 230, "deaths = %.0f" % (D[len(D) - 1]))
 plt.show()
 
 # plt.style.use('classic')
