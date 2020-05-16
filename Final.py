@@ -119,20 +119,23 @@ def interactions_subplots(S, I, R, D, reproduction_number, pop):
     plt.show()
 
 
-infection_rate_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
-interactions_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
-S, I, R, D, reproduction_number, pop = SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR,
-                                                 interactions, pop)
 
-plt.plot(t, S, 'b', label='S')
-plt.plot(t, I, 'r', label='I')
-plt.plot(t, R, 'g', label='R')
-plt.plot(t, D, 'black', label='D')
-# plt.fill_between(t, I, color='r')
-plt.legend()
-plt.title('SIR Model (default)')
-plt.xlabel("Time (days)")
-plt.ylabel(r"Population ($10^6$ Persons)")
-plt.text(250, 250, "R = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
-plt.text(250, 230, "deaths = %.0f" % (D[len(D) - 1]))
-plt.show()
+# plotting of methods above
+
+# infection_rate_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
+# interactions_subplots(S.copy(), I.copy(), R.copy(), D.copy(), reproduction_number.copy(), pop.copy())
+# S, I, R, D, reproduction_number, pop = SIR_Model(S, I, R, D, reproduction_number, dailyDeathRate, rLen, IR,
+#                                                  interactions, pop)
+#
+# plt.plot(t, S, 'b', label='S')
+# plt.plot(t, I, 'r', label='I')
+# plt.plot(t, R, 'g', label='R')
+# plt.plot(t, D, 'black', label='D')
+# # plt.fill_between(t, I, color='r')
+# plt.legend()
+# plt.title('SIR Model (default)')
+# plt.xlabel("Time (days)")
+# plt.ylabel(r"Population ($10^6$ Persons)")
+# plt.text(250, 250, "R = %.3f" % (np.average([i for i in reproduction_number if i > 0])), fontsize=10)
+# plt.text(250, 230, "deaths = %.0f" % (D[len(D) - 1]))
+# plt.show()
