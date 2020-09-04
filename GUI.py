@@ -33,7 +33,7 @@ df = grabData()
 
 root = Tk()
 root.title("Covid-19 Model")
-root.iconbitmap("Images/SFU.ico")
+# root.iconbitmap("Images/SFU.ico")
 # root.geometry("400x400")
 
 def default():
@@ -52,9 +52,9 @@ def insert():
     # interactions_entry.delete(0, END)
     # rLen_entry.delete(0, END)
     deathRate_entry.delete(0, END)
-    print(clicked.get())
+    # print(clicked.get())
     s = df.loc[df['state'] == clicked.get()].to_dict('list')
-    print(s['death'][0])
+    # print(s['death'][0])
     IR_entry.insert(0, s['positive'][0] / s['totalTestResults'][0])
     deathRate_entry.insert(0, s['death'][0] / s['totalTestResults'][0])
 
